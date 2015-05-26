@@ -41,6 +41,8 @@
 
 - (void)hidesTabBar:(BOOL)yesOrNO animated:(BOOL)animated;
 
+- (CGFloat)tabBarHeight;
+
 // Remove the viewcontroller at index of viewControllers.
 - (void)removeViewControllerAtIndex:(NSUInteger)index;
 

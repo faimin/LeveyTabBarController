@@ -9,6 +9,8 @@
 #import "LeveyTabBarController.h"
 #import "LeveyTabBar.h"
 #define kTabBarHeight 49.0f
+//#define IOS7 (floor(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_6_1)
+//#define IOSVERSION ([UIDevice currentDevice].systemVersion.floatValue)
 
 @implementation UIViewController (LeveyTabBarControllerSupport)
 
@@ -143,6 +145,11 @@
 	}
 }
 
+- (CGFloat)tabBarHeight
+{
+    return kTabBarHeight;
+}
+
 - (NSUInteger)selectedIndex
 {
 	return _selectedIndex;
@@ -189,17 +196,55 @@
     {
         if ([targetViewController isKindOfClass:[UINavigationController class]]) {
             [(UINavigationController*)targetViewController popToRootViewControllerAnimated:YES];
+            
+            if (iOS7())
+            {
+                UIViewController *topViewController = ((UINavigationController*)targetViewController).topViewController;
+                if (topViewController)
+                {
+                    [topViewController setNeedsStatusBarAppearanceUpdate];
+                }
+            }
         }
         return;
     }
     
+    //add by saber
+    if (iOS7())
+    {
+        [targetViewController setNeedsStatusBarAppearanceUpdate];
+    }
+    if (self.tabBarHidden)
+    {
+        [self hidesTabBar:NO animated:YES];
+    }
+    
+    UIViewController *selectedViewController = [_viewControllers objectAtIndex:_selectedIndex];
+    [selectedViewController beginAppearanceTransition:NO animated:NO];
+    [selectedViewController willMoveToParentViewController:nil];
+    [selectedViewController.view removeFromSuperview];
+    [selectedViewController removeFromParentViewController];
+    [selectedViewController endAppearanceTransition];
+    
     _selectedIndex = index;
     
+    [targetViewController beginAppearanceTransition:YES animated:NO];
+    targetViewController.view.frame = _transitionView.bounds;
+    [self addChildViewController:targetViewController];
+    [_transitionView addSubview:targetViewController.view];
+    [targetViewController didMoveToParentViewController:self];
+    [targetViewController willRotateToInterfaceOrientation:self.interfaceOrientation duration:0.0f];
+    [targetViewController endAppearanceTransition];
+    //add by saber
+    
+    //old Method
+    /**
 	[_transitionView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview) withObject:nil];
 	targetViewController.view.frame = _transitionView.bounds;
     [self addChildViewController:targetViewController];
     [_transitionView addSubview:targetViewController.view];
-    
+    */
+     
     // Notify the delegate, the viewcontroller has been changed.
     if ([_delegate respondsToSelector:@selector(tabBarController:didSelectViewController:)])
     {
@@ -222,4 +267,19 @@
 {
 	[self displayViewAtIndex:index];
 }
+
+//add by saber
+- (UIStatusBarStyle)preferredStatusBarStyle
+{
+    if (self.selectedViewController)
+    {
+        return [self.selectedViewController preferredStatusBarStyle];
+    }
+    return UIStatusBarStyleLightContent;
+}
+
+bool iOS7(){
+    return floor(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_6_1;
+}
+
 @end
